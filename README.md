@@ -16,7 +16,7 @@ Quick setup (Just set the `LARAVEL_DIRECTORY` var first):
 ```bash
 LARAVEL_DIRECTORY=
 cp -R .docker $LARAVEL_DIRECTORY/.
-cp -R .github-actions $LARAVEL_DIRECTORY/.
+cp -R .github-actions $LARAVEL_DIRECTORY/.github
 cp -R .vscode $LARAVEL_DIRECTORY/.
 cp .env-gh $LARAVEL_DIRECTORY/.
 cp Makefile $LARAVEL_DIRECTORY/.
