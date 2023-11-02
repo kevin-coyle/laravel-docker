@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: .docker/Dockerfile
+    image: mylaravelapp
+    volumes:
+      - ../:/var/www/html
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=laravel
+      - DB_USERNAME=laravel
+      - DB_PASSWORD=secret
+    depends_on:
+      - db
+    ports:
+      - 8080:80
+  db:
+    image: ankane/pgvector:latest
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: laravel
+      POSTGRES_USER: laravel
+      POSTGRES_PASSWORD: secret
+  test-db:
+    image: ankane/pgvector:latest
+    volumes:
+      - test_postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: laravel_test
+      POSTGRES_USER: laravel
+      POSTGRES_PASSWORD: secret
+
+volumes:
+  postgres_data:
+  test_postgres_data:

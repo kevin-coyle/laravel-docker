@@ -1,0 +1,84 @@
+name: Run PHPUnit tests
+
+on: [push]
+
+jobs:
+  run_tests:
+    runs-on: ubuntu-latest
+
+    services:
+      db:
+        image: ankane/pgvector:latest
+        env:
+          POSTGRES_USER: laravel
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: laravel_test
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v2
+
+      # PHP Setup
+      - name: Install PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: pdo_pgsql
+          tools: composer:v2
+
+      # Composer Cache
+      - name: Cache Composer dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.composer/cache/files
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Authenticate Composer
+        run: composer config http-basic.spark.laravel.com ${{ secrets.SPARK_USERNAME }} ${{ secrets.SPARK_PASSWORD }}
+
+      - name: Authenticate Nova
+        run: composer config http-basic.nova.laravel.com ${{ secrets.NOVA_USERNAME }} ${{ secrets.NOVA_PASSWORD }}
+
+      - name: Install Composer dependencies
+        run: composer install
+
+      # .env Setup
+      - name: Copy .env
+        run: cp .env.example .env
+
+      - name: Copy .env.testing
+        run: cp .env.gh .env.testing
+
+      - name: Generate key
+        run: php artisan key:generate
+
+      # Node.js Setup
+      - name: Install Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "18"
+
+      # npm Cache
+      - name: Cache npm dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Authenticate to github packages
+        run: echo "//npm.pkg.github.com/:_authToken=${{ secrets.GH_PACKAGES_SECRET }}" >> ~/.npmrc
+
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Build assets
+        run: npm run build
+
+      # Run Tests
+      - name: Run tests
+        run: APP_ENV=testing php artisan test --parallel
